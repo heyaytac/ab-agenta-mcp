@@ -1,0 +1,26 @@
+{
+  "name": "ab-agenta-mcp",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "test:server": "AB_AGENTA_TEST_MODE=true node dist/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.18.2",
+    "@types/node": "^24.5.2",
+    "axios": "^1.12.2",
+    "typescript": "^5.9.2"
+  },
+  "devDependencies": {
+    "dotenv": "^17.2.2",
+    "tsx": "^4.20.6"
+  }
+}
