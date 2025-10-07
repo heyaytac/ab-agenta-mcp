@@ -1039,6 +1039,123 @@ async function main() {
     res.json({ status: "ok", testMode: isTestMode });
   });
 
+  // Simple REST API endpoints for ChatGPT integration
+
+  // GET a single record
+  app.post("/api/get-record", async (req, res) => {
+    try {
+      const { objecttype, id, fields, resolvetexts } = req.body;
+
+      if (!objecttype || !id) {
+        return res.status(400).json({
+          error: "objecttype and id are required parameters"
+        });
+      }
+
+      const record = await client.getRecord(
+        objecttype,
+        id,
+        fields,
+        resolvetexts
+      );
+
+      return res.json({
+        output_text: JSON.stringify(record, null, 2)
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({
+        error: errorMessage,
+        output_text: `Error: ${errorMessage}`
+      });
+    }
+  });
+
+  // GET multiple records
+  app.post("/api/get-records", async (req, res) => {
+    try {
+      const { objecttype, fields, order, limit, offset, resolvetexts, deletedrecords, archivedrecords } = req.body;
+
+      if (!objecttype) {
+        return res.status(400).json({
+          error: "objecttype is a required parameter"
+        });
+      }
+
+      const result = await client.getRecords(
+        objecttype,
+        fields,
+        order,
+        limit,
+        offset,
+        resolvetexts,
+        deletedrecords,
+        archivedrecords
+      );
+
+      let responseText = JSON.stringify(result.records, null, 2);
+      if (result.totalCount !== undefined) {
+        responseText += `\n\nTotal Count: ${result.totalCount}`;
+      }
+      if (result.contentRange) {
+        responseText += `\nContent-Range: ${result.contentRange}`;
+      }
+
+      return res.json({
+        output_text: responseText
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({
+        error: errorMessage,
+        output_text: `Error: ${errorMessage}`
+      });
+    }
+  });
+
+  // Filter records
+  app.post("/api/filter-records", async (req, res) => {
+    try {
+      const { objecttype, filter, fields, order, limit, offset, resolvetexts, deletedrecords, archivedrecords } = req.body;
+
+      if (!objecttype || !filter) {
+        return res.status(400).json({
+          error: "objecttype and filter are required parameters"
+        });
+      }
+
+      const result = await client.filterRecords(
+        objecttype,
+        filter,
+        fields,
+        order,
+        limit,
+        offset,
+        resolvetexts,
+        deletedrecords,
+        archivedrecords
+      );
+
+      let responseText = JSON.stringify(result.records, null, 2);
+      if (result.totalCount !== undefined) {
+        responseText += `\n\nTotal Count: ${result.totalCount}`;
+      }
+      if (result.contentRange) {
+        responseText += `\nContent-Range: ${result.contentRange}`;
+      }
+
+      return res.json({
+        output_text: responseText
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      return res.status(500).json({
+        error: errorMessage,
+        output_text: `Error: ${errorMessage}`
+      });
+    }
+  });
+
   // SSE endpoint for MCP
   app.get("/sse", async (_req, res) => {
     console.error("New SSE connection established");
