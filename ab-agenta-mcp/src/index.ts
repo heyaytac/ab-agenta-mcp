@@ -1039,6 +1039,204 @@ async function main() {
     res.json({ status: "ok", testMode: isTestMode });
   });
 
+  // OpenAPI schema for ChatGPT Actions
+  app.get("/openapi.json", (_req, res) => {
+    res.json({
+      openapi: "3.1.0",
+      info: {
+        title: "aB-Agenta API",
+        version: "1.0.0",
+        description: "API for accessing aB-Agenta insurance records"
+      },
+      servers: [
+        {
+          url: `https://ab-agenta-mcp.onrender.com`
+        }
+      ],
+      paths: {
+        "/api/get-record": {
+          post: {
+            operationId: "getRecord",
+            summary: "Get a single record by ID and object type",
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      objecttype: {
+                        type: "string",
+                        description: "The objecttype of the record to retrieve"
+                      },
+                      id: {
+                        type: "string",
+                        description: "The ID of the record to retrieve"
+                      },
+                      fields: {
+                        type: "string",
+                        description: "Optional comma-separated list of fields to load"
+                      },
+                      resolvetexts: {
+                        type: "boolean",
+                        description: "Optional flag to resolve encoded fields to readable text"
+                      }
+                    },
+                    required: ["objecttype", "id"]
+                  }
+                }
+              }
+            },
+            responses: {
+              "200": {
+                description: "Successful response",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        output_text: {
+                          type: "string",
+                          description: "The record data as JSON text"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/api/get-records": {
+          post: {
+            operationId: "getRecords",
+            summary: "Get multiple records by object type",
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      objecttype: {
+                        type: "string",
+                        description: "The objecttype of records to retrieve"
+                      },
+                      fields: {
+                        type: "string",
+                        description: "Optional comma-separated list of fields to load"
+                      },
+                      order: {
+                        type: "string",
+                        description: "Optional comma-separated list of fields to order by"
+                      },
+                      limit: {
+                        type: "number",
+                        description: "Maximum number of records to return (default: 10)"
+                      },
+                      offset: {
+                        type: "number",
+                        description: "Number of records to skip (default: 0)"
+                      },
+                      resolvetexts: {
+                        type: "boolean",
+                        description: "Optional flag to resolve encoded fields"
+                      }
+                    },
+                    required: ["objecttype"]
+                  }
+                }
+              }
+            },
+            responses: {
+              "200": {
+                description: "Successful response",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        output_text: {
+                          type: "string",
+                          description: "The records data as JSON text"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "/api/filter-records": {
+          post: {
+            operationId: "filterRecords",
+            summary: "Filter records using MongoDB-like query syntax",
+            requestBody: {
+              required: true,
+              content: {
+                "application/json": {
+                  schema: {
+                    type: "object",
+                    properties: {
+                      objecttype: {
+                        type: "string",
+                        description: "The objecttype of records to retrieve"
+                      },
+                      filter: {
+                        type: "object",
+                        description: "Filter criteria in MongoDB-like query format"
+                      },
+                      fields: {
+                        type: "string",
+                        description: "Optional comma-separated list of fields to load"
+                      },
+                      order: {
+                        type: "string",
+                        description: "Optional comma-separated list of fields to order by"
+                      },
+                      limit: {
+                        type: "number",
+                        description: "Maximum number of records to return (default: 10)"
+                      },
+                      offset: {
+                        type: "number",
+                        description: "Number of records to skip (default: 0)"
+                      },
+                      resolvetexts: {
+                        type: "boolean",
+                        description: "Optional flag to resolve encoded fields"
+                      }
+                    },
+                    required: ["objecttype", "filter"]
+                  }
+                }
+              }
+            },
+            responses: {
+              "200": {
+                description: "Successful response",
+                content: {
+                  "application/json": {
+                    schema: {
+                      type: "object",
+                      properties: {
+                        output_text: {
+                          type: "string",
+                          description: "The filtered records data as JSON text"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+  });
+
   // Simple REST API endpoints for ChatGPT integration
 
   // GET a single record
