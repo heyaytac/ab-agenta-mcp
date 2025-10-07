@@ -1041,11 +1041,12 @@ async function main() {
     console.error("New SSE connection established");
     const transport = new SSEServerTransport("/message", res);
     await server.connect(transport);
+    console.error("SSE transport connected to MCP server");
   });
 
   // Message endpoint for MCP
-  app.post("/message", async (_req, res) => {
-    // SSE transport handles this internally
+  app.post("/message", async (req, res) => {
+    console.error("Received message on /message endpoint:", req.body);
     res.status(200).end();
   });
 
