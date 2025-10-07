@@ -1040,38 +1040,67 @@ async function main() {
   });
 
   // SSE endpoint for MCP
-  app.get("/sse", async (req, res) => {
+  app.get("/sse", async (_req, res) => {
     console.error("New SSE connection established");
 
-    // Extract session ID from query params if provided by the transport
-    const sessionId = req.query.sessionId as string;
+    try {
+      const transport = new SSEServerTransport("/message", res);
 
-    const transport = new SSEServerTransport("/message", res);
+      // Get the session ID from the transport
+      const sessionId = transport.sessionId;
 
-    // Store the transport if we have a session ID
-    if (sessionId) {
+      // Store the transport by session ID
       transports.set(sessionId, transport);
       console.error(`Stored transport for session ${sessionId}`);
-    }
 
-    await server.connect(transport);
-    console.error("SSE transport connected to MCP server");
-
-    // Clean up when connection closes
-    res.on('close', () => {
-      if (sessionId && transports.has(sessionId)) {
+      // Set up onclose handler to clean up
+      transport.onclose = () => {
+        console.error(`SSE transport closed for session ${sessionId}`);
         transports.delete(sessionId);
-        console.error(`Cleaned up transport for session ${sessionId}`);
+      };
+
+      // Connect the transport to the MCP server
+      await server.connect(transport);
+      console.error(`SSE transport connected to MCP server with session ID: ${sessionId}`);
+    } catch (error) {
+      console.error('Error establishing SSE stream:', error);
+      if (!res.headersSent) {
+        res.status(500).send('Error establishing SSE stream');
       }
-    });
+    }
   });
 
-  // Message endpoint for MCP - this should not be needed as SSE transport handles it
+  // Message endpoint for MCP
   app.post("/message", async (req, res) => {
-    console.error("Received message on /message endpoint:", req.body);
-    console.error("Query params:", req.query);
-    // The SSE transport should handle this internally
-    res.status(200).json({ ok: true });
+    console.error("Received POST message");
+
+    // Extract session ID from URL query parameter
+    const sessionId = req.query.sessionId as string;
+
+    if (!sessionId) {
+      console.error('No session ID provided in request URL');
+      res.status(400).send('Missing sessionId parameter');
+      return;
+    }
+
+    const transport = transports.get(sessionId);
+
+    if (!transport) {
+      console.error(`No active transport found for session ID: ${sessionId}`);
+      res.status(404).send('Session not found');
+      return;
+    }
+
+    try {
+      console.error(`Handling message for session ${sessionId}:`, req.body);
+      // Handle the POST message with the transport
+      await transport.handlePostMessage(req, res, req.body);
+    } catch (error) {
+      console.error('Error handling request:', error);
+      if (!res.headersSent) {
+        res.status(500).send('Error handling request');
+      }
+    }
   });
 
   app.listen(PORT, () => {
