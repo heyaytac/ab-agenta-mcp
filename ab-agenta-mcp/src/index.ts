@@ -476,6 +476,9 @@ async function main() {
   app.use(cors());
   app.use(express.json());
 
+  // Store active transports by session ID
+  const transports = new Map<string, SSEServerTransport>();
+
   const server = new Server(
     {
       name: "ab-agenta-mcp",
@@ -1037,17 +1040,38 @@ async function main() {
   });
 
   // SSE endpoint for MCP
-  app.get("/sse", async (_req, res) => {
+  app.get("/sse", async (req, res) => {
     console.error("New SSE connection established");
+
+    // Extract session ID from query params if provided by the transport
+    const sessionId = req.query.sessionId as string;
+
     const transport = new SSEServerTransport("/message", res);
+
+    // Store the transport if we have a session ID
+    if (sessionId) {
+      transports.set(sessionId, transport);
+      console.error(`Stored transport for session ${sessionId}`);
+    }
+
     await server.connect(transport);
     console.error("SSE transport connected to MCP server");
+
+    // Clean up when connection closes
+    res.on('close', () => {
+      if (sessionId && transports.has(sessionId)) {
+        transports.delete(sessionId);
+        console.error(`Cleaned up transport for session ${sessionId}`);
+      }
+    });
   });
 
-  // Message endpoint for MCP
+  // Message endpoint for MCP - this should not be needed as SSE transport handles it
   app.post("/message", async (req, res) => {
     console.error("Received message on /message endpoint:", req.body);
-    res.status(200).end();
+    console.error("Query params:", req.query);
+    // The SSE transport should handle this internally
+    res.status(200).json({ ok: true });
   });
 
   app.listen(PORT, () => {
