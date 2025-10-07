@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
 import axios, { AxiosInstance } from "axios";
+import express from "express";
+import cors from "cors";
 
 interface AbAgentaConfig {
   baseUrl: string;
@@ -452,6 +454,7 @@ class AbAgentaClient {
 
 async function main() {
   const isTestMode = process.env.AB_AGENTA_TEST_MODE === "true";
+  const PORT = process.env.PORT || 3000;
 
   const config: AbAgentaConfig = {
     baseUrl: process.env.AB_AGENTA_BASE_URL || "https://abagenta-mobile.de",
@@ -468,6 +471,10 @@ async function main() {
   }
 
   const client = new AbAgentaClient(config);
+
+  const app = express();
+  app.use(cors());
+  app.use(express.json());
 
   const server = new Server(
     {
@@ -1024,9 +1031,29 @@ async function main() {
     }
   });
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error(`aB-Agenta MCP server started${isTestMode ? " (TEST MODE)" : ""}`);
+  // Health check endpoint
+  app.get("/health", (_req, res) => {
+    res.json({ status: "ok", testMode: isTestMode });
+  });
+
+  // SSE endpoint for MCP
+  app.get("/sse", async (_req, res) => {
+    console.error("New SSE connection established");
+    const transport = new SSEServerTransport("/message", res);
+    await server.connect(transport);
+  });
+
+  // Message endpoint for MCP
+  app.post("/message", async (_req, res) => {
+    // SSE transport handles this internally
+    res.status(200).end();
+  });
+
+  app.listen(PORT, () => {
+    console.error(`aB-Agenta MCP server running on port ${PORT}${isTestMode ? " (TEST MODE)" : ""}`);
+    console.error(`Health check: http://localhost:${PORT}/health`);
+    console.error(`SSE endpoint: http://localhost:${PORT}/sse`);
+  });
 }
 
 main().catch((error) => {

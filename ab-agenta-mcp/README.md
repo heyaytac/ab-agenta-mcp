@@ -32,6 +32,9 @@ An MCP (Model Context Protocol) server for interacting with the aB-Agenta API. T
 The server uses environment variables for configuration. Create a `.env` file or set the following environment variables:
 
 ```bash
+# Server Configuration
+PORT=3000  # Port for HTTP server (default: 3000)
+
 # Required - Base URL of your aB-Agenta instance
 AB_AGENTA_BASE_URL=https://your-server:port
 
@@ -47,47 +50,68 @@ AB_AGENTA_DATA_DIRECTORY=your-data-directory
 AB_AGENTA_CLIENT_SECRET=your-client-secret
 ```
 
-## Usage with Claude Desktop
+## Deployment
 
-Add this configuration to your Claude Desktop config file:
+### Remote Deployment (Render)
 
-### macOS
+This MCP server can be deployed as a remote HTTP service on platforms like Render.
+
+1. Push your code to a Git repository (GitHub, GitLab, etc.)
+
+2. Create a new Web Service on Render:
+   - Connect your repository
+   - Set **Build Command**: `npm install && npm run build`
+   - Set **Start Command**: `npm start`
+   - Add environment variables in the Render dashboard:
+     - `AB_AGENTA_BASE_URL`
+     - `AB_AGENTA_USERNAME`
+     - `AB_AGENTA_PASSWORD`
+     - `AB_AGENTA_SERVICE_PASSWORD` (if needed)
+     - `AB_AGENTA_DATA_DIRECTORY` (if needed)
+     - `AB_AGENTA_CLIENT_SECRET` (if needed)
+
+3. Deploy and note your service URL (e.g., `https://your-app.onrender.com`)
+
+4. Configure Claude Desktop to use the remote server:
+
+### Claude Desktop Configuration (Remote Server)
+
+#### macOS
 Edit `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "ab-agenta": {
-      "command": "node",
-      "args": ["/path/to/ab-agenta-mcp/dist/index.js"],
-      "env": {
-        "AB_AGENTA_BASE_URL": "https://your-server:port",
-        "AB_AGENTA_USERNAME": "your-username",
-        "AB_AGENTA_PASSWORD": "your-password"
-      }
+      "url": "https://your-app.onrender.com/sse"
     }
   }
 }
 ```
 
-### Windows
+#### Windows
 Edit `%APPDATA%\Claude\claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "ab-agenta": {
-      "command": "node",
-      "args": ["C:\\path\\to\\ab-agenta-mcp\\dist\\index.js"],
-      "env": {
-        "AB_AGENTA_BASE_URL": "https://your-server:port",
-        "AB_AGENTA_USERNAME": "your-username",
-        "AB_AGENTA_PASSWORD": "your-password"
-      }
+      "url": "https://your-app.onrender.com/sse"
     }
   }
 }
 ```
+
+### Local Development
+
+You can still run the server locally for development:
+
+```bash
+npm run build
+npm start
+```
+
+The server will be available at `http://localhost:3000` (or the PORT you configure).
 
 ## Available Tools
 
